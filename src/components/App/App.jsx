@@ -1,85 +1,78 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { Searchbar } from 'components/Searchbar';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { toast } from 'react-toastify';
-import { findImages } from 'components/services/api';
-import { MainDiv, Btn } from './App.styled';
-import Loader from 'components/Loader/Loader';
-import ImgErorView from 'components/ImgErorView/ImgErorView';
+import { toast, ToastContainer } from 'react-toastify';
 import { ImageGallery } from 'components/ImageGallery';
-export class App extends Component {
-  state = {
-    searchQuery: '',
-    page: 1,
-    images: [],
-    error: null,
-    loading: false,
-    total: 1,
-    empty: false,
-  };
+import { MainDiv, Btn } from 'components/App/App.styled';
+import { Loader } from 'components/Loader/Loader';
+import { findImages } from 'components/services/api';
+import { ImgErorView } from 'components/ImgErorView';
 
-  onMoreLoad = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
-  };
+import { Error } from 'components/Error';
 
-  handleSubmit = searchQuery => {
-    if (searchQuery === this.state.searchQuery) {
-      return toast.error('Мы уже нашли это изображние');
-    }
-    this.setState({
-      searchQuery,
-      page: 1,
-      images: [],
-      error: null,
-      loading: false,
-      total: 1,
-    });
-  };
+export const App = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [images, setImages] = useState([]);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [total, setTotal] = useState(1);
+  const [empty, setEmpty] = useState(false);
+  const [showButton, setShowButton] = useState(false);
 
-  componentDidUpdate(_, prevState) {
-    const { searchQuery, page } = this.state;
-    if (prevState.searchQuery !== searchQuery || prevState.page !== page) {
-      this.responseQuery(searchQuery, page);
-    }
-  }
+  useEffect(() => {
+    if (searchQuery) responseQuery();
 
-  responseQuery = async (imgName, page) => {
-    try {
-      this.setState({ loading: true });
-      const result = await findImages(imgName, page);
-      if (!result.hits.length) {
-        toast.error('Ничего не найденно');
-        return this.setState({ empty: true });
+    async function responseQuery() {
+      try {
+        setShowButton(true);
+        setLoading(true);
+        const response = await findImages(searchQuery, page);
+
+        if (!response.hits.length) {
+          toast.error(`Ничего не найдено по Вашему запросу`);
+          return setEmpty(true);
+        }
+        setImages(prevState => [...prevState, ...response.hits]);
+        setTotal(response.total);
+        setEmpty(false);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
       }
-      this.setState(prevState => ({
-        images: [...prevState.images, ...result.hits],
-        total: result.total,
-        empty: false,
-      }));
-    } catch (error) {
-      this.setState({ error: error.message });
-    } finally {
-      this.setState({ loading: false });
     }
+  }, [page, searchQuery]);
+
+  const handleSubmit = imageName => {
+    if (searchQuery === imageName) {
+      toast.error(`Мы уже нашли это изображние`);
+      return;
+    }
+    setSearchQuery(imageName);
+    setPage(1);
+    setImages([]);
+    setError(null);
+    setLoading(false);
+    setTotal(1);
+    setEmpty(false);
+  };
+  const loadMoreBtn = () => {
+    setPage(prevPage => prevPage + 1);
   };
 
-  render() {
-    const { page, images, loading, total, empty } =
-      this.state;
-    return (
-      <MainDiv>
-        <Searchbar onSubmit={this.handleSubmit} />
-        <ImageGallery images={images} />
-        {loading && <Loader />}
-        {total / 12 > page && (
-          <Btn onClick={this.onMoreLoad} type="button">
-            Load more
-          </Btn>
-        )}
-        {empty && <ImgErorView>Ничего не найденно</ImgErorView>}
-        <ToastContainer autoClose={3000} />
-      </MainDiv>
-    );
-  }
-}
+  return (
+    <MainDiv>
+      <Searchbar onSubmit={handleSubmit} />
+      <ImageGallery images={images} />
+      {error && <Error error={error} />}
+      {loading && <Loader />}
+      {empty && <ImgErorView />}
+      {total / 12 > page && !loading && showButton && (
+        <Btn type="button" onClick={loadMoreBtn}>
+          Load more
+        </Btn>
+      )}
+      <ToastContainer autoClose={3000} />
+    </MainDiv>
+  );
+};

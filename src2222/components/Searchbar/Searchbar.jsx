@@ -1,12 +1,10 @@
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { SearchBtn, FormWrapper, Header, FormInput } from './Searchbar.styled';
-import { BsSearch } from 'react-icons/bs';
 import { useState } from 'react';
-import PropTypes from 'prop-types';
-
+import { Header, FormWrapper, SearchBtn, FormInput } from './Searchbar.styled';
+import { BsSearch } from 'react-icons/bs';
+import { toast } from 'react-toastify';
 export const Searchbar = ({ onSubmit }) => {
   const [searchQuery, setSearchQuery] = useState('');
+
   const handleQueryChange = event => {
     setSearchQuery(event.currentTarget.value);
   };
@@ -24,11 +22,12 @@ export const Searchbar = ({ onSubmit }) => {
   return (
     <Header>
       <FormWrapper onSubmit={handleSubmit}>
-      <SearchBtn type="submit">
+        <SearchBtn type="submit">
           <BsSearch />
         </SearchBtn>
+
         <FormInput
-          name="searchValue"
+          name="searchQuery"
           value={searchQuery}
           onChange={handleQueryChange}
           type="text"
@@ -36,12 +35,7 @@ export const Searchbar = ({ onSubmit }) => {
           autoFocus
           placeholder="Search images and photos"
         />
-        
       </FormWrapper>
     </Header>
   );
-};
-
-Searchbar.propTypes = {
-  onSubmit: PropTypes.func.isRequired,
 };

@@ -1,39 +1,31 @@
-import { Component } from 'react';
-import { ModalAbsolute, ModalFixed } from './Modal.styled';
-export class Modal extends Component {
-  hendleKeyDown = event => {
-    if (event.code === 'Escape') {
-      this.props.onClose();
-    }
-  };
+import { useEffect } from 'react';
+import { ModalFixed, ModalAbsolute } from './Modal.styled';
+import PropTypes from 'prop-types';
 
-  hendleBackdropClick = event => {
-    // console.log('Кликнули в бекдроп');
-    // console.log('currentTarget: на чем сработал обработчик события', event.currentTarget);
-    // console.log('target: то куда клацнули', event.target);
+export const Modal = ({ children, onClose }) => {
+  useEffect(() => {
+    const handleKeydown = event => {
+      if (event.code === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeydown);
+    return () => {
+      window.removeEventListener('keydown', handleKeydown);
+    };
+  }, [onClose]);
+
+  const handleBackdropClick = event => {
     if (event.currentTarget === event.target) {
-        this.props.onClose();
+      onClose();
     }
   };
+  return (
+    <ModalFixed onClick={handleBackdropClick}>
+      <ModalAbsolute>{children}</ModalAbsolute>
+    </ModalFixed>
+  );
+};
 
-  componentDidMount() {
-    console.log('Modal componentDidMount');
-    window.addEventListener('keydown', this.hendleKeyDown);
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.hendleKeyDown);
-  }
-
-  componentDidUpdate() {
-    'Modal componentDidUpdate';
-  }
-
-  render() {
-    return (
-      <ModalFixed onClick={this.hendleBackdropClick}>
-        <ModalAbsolute>{this.props.children}</ModalAbsolute>
-      </ModalFixed>
-    );
-  }
-}
+Modal.propTypes = {
+  children: PropTypes.node,
+  onClose: PropTypes.func.isRequired,
+};
